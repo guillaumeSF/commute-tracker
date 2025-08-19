@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, Clock, MapPin } from 'lucide-react';
+import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 
 const TripForm = ({ trip, onSubmit, onCancel }) => {
   const [scheduleType, setScheduleType] = useState('custom');
   const [customCron, setCustomCron] = useState('');
+  const [specificTime, setSpecificTime] = useState('08:00');
+  const [originValue, setOriginValue] = useState(null);
+  const [destinationValue, setDestinationValue] = useState(null);
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm();
   const isActive = watch('is_active', true);
@@ -22,6 +26,13 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
       else if (trip.schedule_cron === '0 17 * * 1-5') setScheduleType('weekday-evening');
       else if (trip.schedule_cron === '0 */2 * * *') setScheduleType('every-2-hours');
       else if (trip.schedule_cron === '0 */4 * * *') setScheduleType('every-4-hours');
+      else if (trip.schedule_cron === '0 */30 * * *') setScheduleType('every-30-minutes');
+      else if (trip.schedule_cron.match(/^0 \d+ \d+ \* \*$/)) {
+        setScheduleType('specific-time');
+        const hour = parseInt(trip.schedule_cron.split(' ')[1]);
+        const minute = parseInt(trip.schedule_cron.split(' ')[0]);
+        setSpecificTime(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+      }
       else setScheduleType('custom');
     }
   }, [trip, setValue]);
@@ -36,6 +47,11 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
         return '0 */2 * * *'; // Every 2 hours
       case 'every-4-hours':
         return '0 */4 * * *'; // Every 4 hours
+      case 'every-30-minutes':
+        return '0 */30 * * *'; // Every 30 minutes
+      case 'specific-time':
+        const [hour, minute] = specificTime.split(':');
+        return `${minute} ${hour} * * *`; // Specific time daily
       case 'custom':
         return customCron;
       default:
@@ -49,6 +65,20 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
       schedule_cron: getCronExpression()
     };
     onSubmit(tripData);
+  };
+
+  const handleOriginChange = (value) => {
+    setOriginValue(value);
+    if (value && value.label) {
+      setValue('origin_address', value.label);
+    }
+  };
+
+  const handleDestinationChange = (value) => {
+    setDestinationValue(value);
+    if (value && value.label) {
+      setValue('destination_address', value.label);
+    }
   };
 
   return (
@@ -84,32 +114,76 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
               )}
             </div>
 
-            {/* Origin Address */}
+            {/* Origin Address with Google Places Autocomplete */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Origin Address
               </label>
+              <GooglePlacesAutocomplete
+                apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
+                selectProps={{
+                  originValue,
+                  onChange: handleOriginChange,
+                  placeholder: 'Enter origin address...',
+                  styles: {
+                    control: (provided) => ({
+                      ...provided,
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      minHeight: '42px',
+                      '&:hover': {
+                        borderColor: '#3b82f6'
+                      }
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#f3f4f6' : 'white',
+                      color: state.isSelected ? 'white' : '#374151'
+                    })
+                  }
+                }}
+              />
               <input
-                type="text"
+                type="hidden"
                 {...register('origin_address', { required: 'Origin address is required' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="e.g., 123 Main St, City, State"
               />
               {errors.origin_address && (
                 <p className="text-red-500 text-sm mt-1">{errors.origin_address.message}</p>
               )}
             </div>
 
-            {/* Destination Address */}
+            {/* Destination Address with Google Places Autocomplete */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Destination Address
               </label>
+              <GooglePlacesAutocomplete
+                apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
+                selectProps={{
+                  destinationValue,
+                  onChange: handleDestinationChange,
+                  placeholder: 'Enter destination address...',
+                  styles: {
+                    control: (provided) => ({
+                      ...provided,
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      minHeight: '42px',
+                      '&:hover': {
+                        borderColor: '#3b82f6'
+                      }
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#f3f4f6' : 'white',
+                      color: state.isSelected ? 'white' : '#374151'
+                    })
+                  }
+                }}
+              />
               <input
-                type="text"
+                type="hidden"
                 {...register('destination_address', { required: 'Destination address is required' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="e.g., 456 Business Ave, City, State"
               />
               {errors.destination_address && (
                 <p className="text-red-500 text-sm mt-1">{errors.destination_address.message}</p>
@@ -149,6 +223,17 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
                 <label className="flex items-center">
                   <input
                     type="radio"
+                    value="every-30-minutes"
+                    checked={scheduleType === 'every-30-minutes'}
+                    onChange={(e) => setScheduleType(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Every 30 minutes</span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="radio"
                     value="every-2-hours"
                     checked={scheduleType === 'every-2-hours'}
                     onChange={(e) => setScheduleType(e.target.value)}
@@ -171,6 +256,17 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
                 <label className="flex items-center">
                   <input
                     type="radio"
+                    value="specific-time"
+                    checked={scheduleType === 'specific-time'}
+                    onChange={(e) => setScheduleType(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">At specific time daily</span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="radio"
                     value="custom"
                     checked={scheduleType === 'custom'}
                     onChange={(e) => setScheduleType(e.target.value)}
@@ -179,6 +275,20 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
                   <span className="text-sm">Custom cron expression</span>
                 </label>
               </div>
+
+              {scheduleType === 'specific-time' && (
+                <div className="mt-2">
+                  <input
+                    type="time"
+                    value={specificTime}
+                    onChange={(e) => setSpecificTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Check will run at this time every day
+                  </p>
+                </div>
+              )}
 
               {scheduleType === 'custom' && (
                 <div className="mt-2">

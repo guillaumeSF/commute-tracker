@@ -14,7 +14,19 @@ export const formatCronSchedule = (cron) => {
   if (cron === '0 7 * * 1-5') return 'Weekday mornings (7 AM)';
   if (cron === '0 16 * * 1-5') return 'Weekday evenings (4 PM)';
   
-  // Handle more complex patterns
+  // Handle specific time daily patterns (e.g., "0 14 * * *" for 2 PM daily)
+  if (cron.match(/^0 \d+ \* \* \*$/)) {
+    const hour = parseInt(cron.split(' ')[1]);
+    const minute = parseInt(cron.split(' ')[0]);
+    if (hour < 12) {
+      return `Daily at ${hour}:${minute.toString().padStart(2, '0')} AM`;
+    } else {
+      const pmHour = hour > 12 ? hour - 12 : 12;
+      return `Daily at ${pmHour}:${minute.toString().padStart(2, '0')} PM`;
+    }
+  }
+  
+  // Handle weekday patterns
   if (cron.match(/^0 \d+ \* \* 1-5$/)) {
     const hour = cron.split(' ')[1];
     if (hour < 12) {
@@ -24,8 +36,13 @@ export const formatCronSchedule = (cron) => {
       return `Weekday afternoons (${pmHour}:00 PM)`;
     }
   }
+  
+  // Handle interval patterns
   if (cron.match(/^0 \*\/\d+ \* \* \*$/)) {
     const interval = cron.split(' ')[1].replace('*/', '');
+    if (interval === '30') {
+      return 'Every 30 minutes';
+    }
     return `Every ${interval} hours`;
   }
   

@@ -4,7 +4,7 @@ import { Plus, Edit, Trash2, Play, Pause, Clock, MapPin } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import TripForm from '../components/TripForm';
-import { formatCronSchedule, formatDuration } from '../utils/formatters';
+import { formatCronSchedule } from '../utils/formatters';
 
 const Trips = () => {
   const [trips, setTrips] = useState([]);
