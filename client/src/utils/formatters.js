@@ -51,6 +51,12 @@ export const formatCronSchedule = (cron) => {
     return `Every ${interval} hours`;
   }
   
+  // Handle new minute interval patterns (e.g., */5 * * * * for every 5 minutes)
+  if (cron.match(/^\*\/\d+ \* \* \* \*$/)) {
+    const interval = cron.split(' ')[0].replace('*/', '');
+    return `Every ${interval} minute${parseInt(interval) !== 1 ? 's' : ''}`;
+  }
+  
   // Fallback for custom expressions
   return 'Custom schedule';
 };
@@ -164,8 +170,30 @@ export const getNextScheduledCheck = (cronExpression) => {
           nextDate.setMinutes(nextDate.getMinutes() - 60, 0, 0);
         }
       }
+    } else if (minute.startsWith('*/') && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      // Special case for new minute interval patterns like "*/5 * * * *" (every 5 minutes)
+      const interval = parseInt(minute.replace('*/', ''));
+      const currentMinutes = nextDate.getMinutes();
+      const nextInterval = Math.ceil(currentMinutes / interval) * interval;
+      
+      if (nextInterval >= 60) {
+        // Move to next hour
+        nextDate.setHours(nextDate.getHours() + 1);
+        nextDate.setMinutes(0, 0, 0);
+      } else {
+        nextDate.setMinutes(nextInterval, 0, 0);
+      }
+      
+      // If the calculated time has passed, move to next interval
+      if (nextDate <= now) {
+        nextDate.setMinutes(nextDate.getMinutes() + interval, 0, 0);
+        if (nextDate.getMinutes() >= 60) {
+          nextDate.setHours(nextDate.getHours() + 1);
+          nextDate.setMinutes(nextDate.getMinutes() - 60, 0, 0);
+        }
+      }
     } else if (minute === '0' && hour.startsWith('*/') && day === '*' && month === '*' && weekday === '*') {
-      // Special case for custom minute intervals like "0 */15 * * *" (every 15 minutes)
+      // Special case for old custom minute intervals like "0 */15 * * *" (every 15 minutes) - backward compatibility
       const interval = parseInt(hour.replace('*/', ''));
       const currentMinutes = nextDate.getMinutes();
       const nextInterval = Math.ceil(currentMinutes / interval) * interval;

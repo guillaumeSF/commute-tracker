@@ -31,8 +31,14 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
         setScheduleType('every-x-minutes');
         setCustomMinutes(1);
       }
+      else if (trip.schedule_cron.match(/^\*\/(\d+) \* \* \* \*$/)) {
+        // Custom minutes interval (new format: */X * * * *)
+        const minutes = parseInt(trip.schedule_cron.match(/^\*\/(\d+) \* \* \* \*$/)[1]);
+        setScheduleType('every-x-minutes');
+        setCustomMinutes(minutes);
+      }
       else if (trip.schedule_cron.match(/^0 \*\/(\d+) \* \* \*$/)) {
-        // Custom minutes interval
+        // Custom minutes interval (old format: 0 */X * * *) - for backward compatibility
         const minutes = parseInt(trip.schedule_cron.match(/^0 \*\/(\d+) \* \* \*$/)[1]);
         setScheduleType('every-x-minutes');
         setCustomMinutes(minutes);
@@ -63,7 +69,7 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
         if (customMinutes === 1) {
           return `* * * * *`; // Every minute
         }
-        return `0 */${customMinutes} * * *`; // Every X minutes
+        return `*/${customMinutes} * * * *`; // Every X minutes
       case 'specific-time':
         const [hour, minute] = specificTime.split(':');
         return `${minute} ${hour} * * *`; // Specific time daily
