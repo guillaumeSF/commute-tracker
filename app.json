@@ -1,0 +1,27 @@
+{
+  "name": "Commute Tracker",
+  "description": "Track commute times between addresses using Google Maps API",
+  "repository": "https://github.com/yourusername/commute-tracker",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["node", "express", "postgresql", "google-maps", "commute", "tracking"],
+  "env": {
+    "GOOGLE_MAPS_API_KEY": {
+      "description": "Your Google Maps API key",
+      "required": true
+    },
+    "NODE_ENV": {
+      "description": "Environment (production/development)",
+      "value": "production"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
