@@ -13,6 +13,7 @@ export const formatCronSchedule = (cron) => {
   if (cron === '0 18 * * 1-5') return 'Weekday evenings (6 PM)';
   if (cron === '0 7 * * 1-5') return 'Weekday mornings (7 AM)';
   if (cron === '0 16 * * 1-5') return 'Weekday evenings (4 PM)';
+  if (cron === '* * * * *') return 'Every minute';
   
   // Handle specific time daily patterns (e.g., "0 14 * * *" for 2 PM daily)
   if (cron.match(/^0 \d+ \* \* \*$/)) {
@@ -134,6 +135,13 @@ export const getNextScheduledCheck = (cronExpression) => {
       // Special case for "every hour" pattern (0 * * * *)
       nextDate.setMinutes(0, 0, 0);
       nextDate.setHours(nextDate.getHours() + 1);
+    } else if (minute === '*' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      // Special case for "every minute" pattern (* * * * *)
+      nextDate.setMinutes(nextDate.getMinutes() + 1, 0, 0);
+      if (nextDate.getMinutes() >= 60) {
+        nextDate.setHours(nextDate.getHours() + 1);
+        nextDate.setMinutes(0, 0, 0);
+      }
     } else if (hour === '*' && minute.startsWith('*/') && day === '*' && month === '*' && weekday === '*') {
       // Special case for minute intervals like "0 */30 * * *" (every 30 minutes)
       const interval = parseInt(minute.replace('*/', ''));
