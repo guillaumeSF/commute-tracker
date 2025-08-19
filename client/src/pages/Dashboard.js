@@ -107,11 +107,16 @@ const Dashboard = () => {
               <p className="text-sm font-medium text-gray-600">Avg Duration</p>
               <p className="text-2xl font-bold text-gray-900">
                 {(() => {
-                  const activeTripsWithData = overview.filter(trip => trip.is_active && trip.avg_duration_seconds);
+                  const activeTripsWithData = overview.filter(trip => trip.is_active && trip.total_checks > 0);
                   if (activeTripsWithData.length === 0) return '0 min';
                   
-                  const totalDuration = activeTripsWithData.reduce((sum, trip) => sum + (trip.avg_duration_seconds || 0), 0);
-                  const avgDuration = totalDuration / activeTripsWithData.length;
+                  // Calculate weighted average based on number of checks
+                  const totalChecks = activeTripsWithData.reduce((sum, trip) => sum + (trip.total_checks || 0), 0);
+                  const totalDuration = activeTripsWithData.reduce((sum, trip) => {
+                    return sum + ((trip.avg_duration_seconds || 0) * (trip.total_checks || 0));
+                  }, 0);
+                  
+                  const avgDuration = totalChecks > 0 ? totalDuration / totalChecks : 0;
                   return formatDuration(avgDuration);
                 })()}
               </p>

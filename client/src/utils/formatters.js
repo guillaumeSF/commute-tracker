@@ -124,7 +124,33 @@ export const getNextScheduledCheck = (cronExpression) => {
       // If we went past the hour, move to next hour
       if (nextDate <= now) {
         nextDate.setHours(nextDate.getHours() + 1);
-        nextDate.setMinutes(parseInt(minute.replace('*/', '')), 0, 0);
+        nextDate.setMinutes(0, 0, 0);
+      }
+    } else if (hour === '*' && minute === '0' && day === '*' && month === '*' && weekday === '*') {
+      // Special case for "every hour" pattern (0 * * * *)
+      nextDate.setMinutes(0, 0, 0);
+      nextDate.setHours(nextDate.getHours() + 1);
+    } else if (hour === '*' && minute.startsWith('*/') && day === '*' && month === '*' && weekday === '*') {
+      // Special case for minute intervals like "0 */30 * * *" (every 30 minutes)
+      const interval = parseInt(minute.replace('*/', ''));
+      const currentMinutes = nextDate.getMinutes();
+      const nextInterval = Math.ceil(currentMinutes / interval) * interval;
+      
+      if (nextInterval >= 60) {
+        // Move to next hour
+        nextDate.setHours(nextDate.getHours() + 1);
+        nextDate.setMinutes(0, 0, 0);
+      } else {
+        nextDate.setMinutes(nextInterval, 0, 0);
+      }
+      
+      // If the calculated time has passed, move to next interval
+      if (nextDate <= now) {
+        nextDate.setMinutes(nextDate.getMinutes() + interval, 0, 0);
+        if (nextDate.getMinutes() >= 60) {
+          nextDate.setHours(nextDate.getHours() + 1);
+          nextDate.setMinutes(nextDate.getMinutes() - 60, 0, 0);
+        }
       }
     } else {
       // Daily pattern - set specific time
