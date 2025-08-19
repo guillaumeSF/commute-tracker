@@ -9,6 +9,7 @@ require('dotenv').config();
 const db = require('./config/database');
 const tripRoutes = require('./routes/trips');
 const analyticsRoutes = require('./routes/analytics');
+const checksRoutes = require('./routes/checks');
 const { fetchTravelTime } = require('./services/googleMapsService');
 const { scheduleTripChecks } = require('./services/schedulerService');
 
@@ -42,6 +43,7 @@ db.init();
 // Routes
 app.use('/api/trips', tripRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/checks', checksRoutes);
 
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {

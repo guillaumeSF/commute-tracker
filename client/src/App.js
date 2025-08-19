@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Trips from './pages/Trips';
 import Analytics from './pages/Analytics';
 import TripDetail from './pages/TripDetail';
+import Checks from './pages/Checks';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="/trips" element={<Trips />} />
             <Route path="/trips/:id" element={<TripDetail />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/checks" element={<Checks />} />
           </Routes>
         </main>
         <Toaster 

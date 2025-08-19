@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, BarChart3, Home, Plus } from 'lucide-react';
+import { MapPin, BarChart3, Home, Plus, Clock } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -55,6 +55,18 @@ const Navbar = () => {
             >
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
+            </Link>
+            
+            <Link
+              to="/checks"
+              className={`px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-1 ${
+                isActive('/checks') 
+                  ? 'bg-primary-100 text-primary-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Clock className="h-4 w-4" />
+              <span>Checks</span>
             </Link>
           </div>
         </div>
