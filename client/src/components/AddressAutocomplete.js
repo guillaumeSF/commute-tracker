@@ -87,9 +87,11 @@ const AddressAutocomplete = ({
 
     try {
       // Create the autocomplete object using the legacy API (still supported)
+      // Note: We're intentionally using the legacy API as it's more stable and fully functional
+      // The new PlaceAutocompleteElement is still in development and has different API patterns
       autocompleteRef.current = new window.google.maps.places.Autocomplete(containerRef.current.querySelector('input'), {
         types: ['address'],
-        componentRestrictions: {}, // You can add country restrictions here if needed
+        // Remove componentRestrictions to avoid the error - it's optional
       });
 
       // Listen for place selection
