@@ -87,14 +87,14 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-sm font-medium text-gray-600">Total Checks</h3>
           <p className="text-2xl font-bold text-gray-900">
-            {overview.reduce((sum, trip) => sum + (trip.total_checks || 0), 0)}
+            {overview.reduce((sum, trip) => sum + (parseInt(trip.total_checks) || 0), 0)}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-sm font-medium text-gray-600">Avg Duration</h3>
           <p className="text-2xl font-bold text-gray-900">
             {overview.length > 0 
-              ? formatDuration(overview.reduce((sum, trip) => sum + (trip.avg_duration_seconds || 0), 0) / overview.length)
+              ? formatDuration(overview.reduce((sum, trip) => sum + (parseFloat(trip.avg_duration_seconds) || 0), 0) / overview.length)
               : '0 min'
             }
           </p>
@@ -102,7 +102,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-sm font-medium text-gray-600">Active Trips</h3>
           <p className="text-2xl font-bold text-gray-900">
-            {overview.filter(trip => trip.total_checks > 0).length}
+            {overview.filter(trip => parseInt(trip.total_checks) > 0).length}
           </p>
         </div>
       </div>
@@ -116,10 +116,10 @@ const Analytics = () => {
               <PieChart>
                 <Pie
                   data={[
-                    { name: 'Low', value: overview.reduce((sum, trip) => sum + (trip.low_traffic_count || 0), 0) },
-                    { name: 'Medium', value: overview.reduce((sum, trip) => sum + (trip.medium_traffic_count || 0), 0) },
-                    { name: 'High', value: overview.reduce((sum, trip) => sum + (trip.high_traffic_count || 0), 0) },
-                    { name: 'Severe', value: overview.reduce((sum, trip) => sum + (trip.severe_traffic_count || 0), 0) }
+                    { name: 'Low', value: overview.reduce((sum, trip) => sum + (parseInt(trip.low_traffic_count) || 0), 0) },
+                    { name: 'Medium', value: overview.reduce((sum, trip) => sum + (parseInt(trip.medium_traffic_count) || 0), 0) },
+                    { name: 'High', value: overview.reduce((sum, trip) => sum + (parseInt(trip.high_traffic_count) || 0), 0) },
+                    { name: 'Severe', value: overview.reduce((sum, trip) => sum + (parseInt(trip.severe_traffic_count) || 0), 0) }
                   ].filter(item => item.value > 0)}
                   cx="50%"
                   cy="50%"
