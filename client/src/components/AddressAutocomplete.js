@@ -8,9 +8,9 @@ const AddressAutocomplete = ({
   onAddressSelect 
 }) => {
   const [inputValue, setInputValue] = useState(value || '');
-  const inputRef = useRef(null);
-  const autocompleteRef = useRef(null);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const containerRef = useRef(null);
+  const autocompleteElementRef = useRef(null);
 
   useEffect(() => {
     setInputValue(value || '');
@@ -49,26 +49,32 @@ const AddressAutocomplete = ({
   }, []);
 
   useEffect(() => {
-    if (isGoogleLoaded && inputRef.current) {
+    if (isGoogleLoaded && containerRef.current) {
       initializeAutocomplete();
     }
   }, [isGoogleLoaded]);
 
   const initializeAutocomplete = () => {
-    if (!inputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
+    if (!containerRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
       return;
     }
 
     try {
-      // Create the autocomplete object
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      // Clear any existing autocomplete element
+      if (autocompleteElementRef.current) {
+        containerRef.current.removeChild(autocompleteElementRef.current);
+      }
+
+      // Create the new PlaceAutocompleteElement
+      autocompleteElementRef.current = new window.google.maps.places.PlaceAutocompleteElement({
+        inputElement: containerRef.current.querySelector('input'),
         types: ['address'],
         componentRestrictions: {}, // You can add country restrictions here if needed
       });
 
       // Listen for place selection
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
+      autocompleteElementRef.current.addListener('place_changed', () => {
+        const place = autocompleteElementRef.current.getPlace();
         
         if (place && place.formatted_address) {
           const formattedAddress = place.formatted_address;
@@ -98,9 +104,8 @@ const AddressAutocomplete = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <input
-        ref={inputRef}
         type="text"
         value={inputValue}
         onChange={handleInputChange}
