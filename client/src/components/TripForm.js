@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, Clock, MapPin } from 'lucide-react';
-import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
+import { X, Clock } from 'lucide-react';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const TripForm = ({ trip, onSubmit, onCancel }) => {
   const [scheduleType, setScheduleType] = useState('custom');
   const [customCron, setCustomCron] = useState('');
   const [specificTime, setSpecificTime] = useState('08:00');
-  const [originValue, setOriginValue] = useState(null);
-  const [destinationValue, setDestinationValue] = useState(null);
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm();
   const isActive = watch('is_active', true);
@@ -68,17 +66,11 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
   };
 
   const handleOriginChange = (value) => {
-    setOriginValue(value);
-    if (value && value.label) {
-      setValue('origin_address', value.label);
-    }
+    setValue('origin_address', value);
   };
 
   const handleDestinationChange = (value) => {
-    setDestinationValue(value);
-    if (value && value.label) {
-      setValue('destination_address', value.label);
-    }
+    setValue('destination_address', value);
   };
 
   return (
@@ -114,34 +106,16 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
               )}
             </div>
 
-            {/* Origin Address with Google Places Autocomplete */}
+            {/* Origin Address with Custom Autocomplete */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Origin Address
               </label>
-              <GooglePlacesAutocomplete
-                apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
-                selectProps={{
-                  originValue,
-                  onChange: handleOriginChange,
-                  placeholder: 'Enter origin address...',
-                  styles: {
-                    control: (provided) => ({
-                      ...provided,
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      minHeight: '42px',
-                      '&:hover': {
-                        borderColor: '#3b82f6'
-                      }
-                    }),
-                    option: (provided, state) => ({
-                      ...provided,
-                      backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#f3f4f6' : 'white',
-                      color: state.isSelected ? 'white' : '#374151'
-                    })
-                  }
-                }}
+              <AddressAutocomplete
+                value={watch('origin_address')}
+                onChange={handleOriginChange}
+                placeholder="Enter origin address..."
+                onAddressSelect={handleOriginChange}
               />
               <input
                 type="hidden"
@@ -152,34 +126,16 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
               )}
             </div>
 
-            {/* Destination Address with Google Places Autocomplete */}
+            {/* Destination Address with Custom Autocomplete */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Destination Address
               </label>
-              <GooglePlacesAutocomplete
-                apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
-                selectProps={{
-                  destinationValue,
-                  onChange: handleDestinationChange,
-                  placeholder: 'Enter destination address...',
-                  styles: {
-                    control: (provided) => ({
-                      ...provided,
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      minHeight: '42px',
-                      '&:hover': {
-                        borderColor: '#3b82f6'
-                      }
-                    }),
-                    option: (provided, state) => ({
-                      ...provided,
-                      backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#f3f4f6' : 'white',
-                      color: state.isSelected ? 'white' : '#374151'
-                    })
-                  }
-                }}
+              <AddressAutocomplete
+                value={watch('destination_address')}
+                onChange={handleDestinationChange}
+                placeholder="Enter destination address..."
+                onAddressSelect={handleDestinationChange}
               />
               <input
                 type="hidden"
