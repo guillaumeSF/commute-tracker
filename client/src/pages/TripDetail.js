@@ -151,7 +151,7 @@ const TripDetail = () => {
 
       {/* Trip Info */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
           <div>
             <h3 className="text-sm font-medium text-gray-600 flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
@@ -198,6 +198,24 @@ const TripDetail = () => {
             <h3 className="text-sm font-medium text-gray-600">Created</h3>
             <p className="text-lg font-semibold text-gray-900">{formatDate(trip.created_at)}</p>
             <p className="text-xs text-gray-500">{formatTime(trip.created_at)}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 flex items-center">
+              <Clock className="h-4 w-4 mr-1" />
+              Last Check
+            </h3>
+            {travelTimes.length > 0 ? (
+              <>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatDate(travelTimes[0].recorded_at)}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatTime(travelTimes[0].recorded_at)}
+                </p>
+              </>
+            ) : (
+              <p className="text-lg font-semibold text-gray-400">Never</p>
+            )}
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-600">Last Updated</h3>
