@@ -7,6 +7,7 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
   const [scheduleType, setScheduleType] = useState('custom');
   const [customCron, setCustomCron] = useState('');
   const [specificTime, setSpecificTime] = useState('08:00');
+  const [customMinutes, setCustomMinutes] = useState(30);
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm();
   const isActive = watch('is_active', true);
@@ -25,6 +26,12 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
       else if (trip.schedule_cron === '0 */2 * * *') setScheduleType('every-2-hours');
       else if (trip.schedule_cron === '0 */4 * * *') setScheduleType('every-4-hours');
       else if (trip.schedule_cron === '0 */30 * * *') setScheduleType('every-30-minutes');
+      else if (trip.schedule_cron.match(/^0 \*\/(\d+) \* \* \*$/)) {
+        // Custom minutes interval
+        const minutes = parseInt(trip.schedule_cron.match(/^0 \*\/(\d+) \* \* \*$/)[1]);
+        setScheduleType('every-x-minutes');
+        setCustomMinutes(minutes);
+      }
       else if (trip.schedule_cron.match(/^0 \d+ \d+ \* \*$/)) {
         setScheduleType('specific-time');
         const hour = parseInt(trip.schedule_cron.split(' ')[1]);
@@ -47,6 +54,8 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
         return '0 */4 * * *'; // Every 4 hours
       case 'every-30-minutes':
         return '0 */30 * * *'; // Every 30 minutes
+      case 'every-x-minutes':
+        return `0 */${customMinutes} * * *`; // Every X minutes
       case 'specific-time':
         const [hour, minute] = specificTime.split(':');
         return `${minute} ${hour} * * *`; // Specific time daily
@@ -190,6 +199,17 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
                 <label className="flex items-center">
                   <input
                     type="radio"
+                    value="every-x-minutes"
+                    checked={scheduleType === 'every-x-minutes'}
+                    onChange={(e) => setScheduleType(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Every X minutes (custom interval)</span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="radio"
                     value="every-2-hours"
                     checked={scheduleType === 'every-2-hours'}
                     onChange={(e) => setScheduleType(e.target.value)}
@@ -242,6 +262,25 @@ const TripForm = ({ trip, onSubmit, onCancel }) => {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Check will run at this time every day
+                  </p>
+                </div>
+              )}
+
+              {scheduleType === 'every-x-minutes' && (
+                <div className="mt-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="59"
+                      value={customMinutes}
+                      onChange={(e) => setCustomMinutes(parseInt(e.target.value) || 1)}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    />
+                    <span className="text-sm text-gray-700">minutes</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Check will run every {customMinutes} minute{customMinutes !== 1 ? 's' : ''}
                   </p>
                 </div>
               )}

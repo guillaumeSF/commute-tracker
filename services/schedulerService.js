@@ -31,7 +31,7 @@ const scheduleTrip = (trip) => {
       await checkTripTravelTime(trip);
     }, {
       scheduled: true,
-      timezone: "America/New_York" // Adjust timezone as needed
+      timezone: "UTC" // Use UTC to match Heroku's timezone
     });
 
     scheduledJobs.set(trip.id, job);
