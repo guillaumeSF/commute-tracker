@@ -91,7 +91,7 @@ const Dashboard = () => {
               <p className="text-2xl font-bold text-gray-900">
                 {overview
                   .filter(trip => trip.is_active)
-                  .reduce((sum, trip) => sum + (trip.total_checks || 0), 0)
+                  .reduce((sum, trip) => sum + (parseInt(trip.total_checks) || 0), 0)
                 }
               </p>
             </div>
@@ -111,9 +111,9 @@ const Dashboard = () => {
                   if (activeTripsWithData.length === 0) return '0 min';
                   
                   // Calculate weighted average based on number of checks
-                  const totalChecks = activeTripsWithData.reduce((sum, trip) => sum + (trip.total_checks || 0), 0);
+                  const totalChecks = activeTripsWithData.reduce((sum, trip) => sum + (parseInt(trip.total_checks) || 0), 0);
                   const totalDuration = activeTripsWithData.reduce((sum, trip) => {
-                    return sum + ((trip.avg_duration_seconds || 0) * (trip.total_checks || 0));
+                    return sum + ((parseFloat(trip.avg_duration_seconds) || 0) * (parseInt(trip.total_checks) || 0));
                   }, 0);
                   
                   const avgDuration = totalChecks > 0 ? totalDuration / totalChecks : 0;
