@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, Play, Pause, Clock, MapPin } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import TripForm from '../components/TripForm';
+import { formatCronSchedule, formatDuration } from '../utils/formatters';
 
 const Trips = () => {
   const [trips, setTrips] = useState([]);
@@ -78,15 +79,7 @@ const Trips = () => {
     }
   };
 
-  const formatDuration = (seconds) => {
-    const minutes = Math.round(seconds / 60);
-    return `${minutes} min`;
-  };
 
-  const formatCronSchedule = (cron) => {
-    // Simple cron format display - you can enhance this
-    return cron;
-  };
 
   if (loading) {
     return (

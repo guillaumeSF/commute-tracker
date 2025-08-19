@@ -5,6 +5,7 @@ import { tripsAPI, analyticsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Clock, MapPin, TrendingUp, Edit, Calendar, Settings, RefreshCw } from 'lucide-react';
 import TripForm from '../components/TripForm';
+import { formatCronSchedule, formatDuration, formatDate, formatTime, getTrafficLevelColor } from '../utils/formatters';
 
 const TripDetail = () => {
   const { id } = useParams();
@@ -66,37 +67,7 @@ const TripDetail = () => {
     }
   };
 
-  const formatDuration = (seconds) => {
-    const minutes = Math.round(seconds / 60);
-    return `${minutes} min`;
-  };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString();
-  };
-
-  const formatCronSchedule = (cron) => {
-    // Enhanced cron format display
-    if (cron === '0 8 * * 1-5') return 'Weekday mornings (8 AM)';
-    if (cron === '0 17 * * 1-5') return 'Weekday evenings (5 PM)';
-    if (cron === '0 */2 * * *') return 'Every 2 hours';
-    if (cron === '0 */4 * * *') return 'Every 4 hours';
-    return cron;
-  };
-
-  const getTrafficLevelColor = (level) => {
-    switch (level) {
-      case 'low': return '#10B981';
-      case 'medium': return '#F59E0B';
-      case 'high': return '#F97316';
-      case 'severe': return '#EF4444';
-      default: return '#6B7280';
-    }
-  };
 
   const COLORS = ['#10B981', '#F59E0B', '#F97316', '#EF4444'];
 
