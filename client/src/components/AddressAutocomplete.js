@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Global state to track if Google Maps is already loaded
+let googleMapsLoaded = false;
+let googleMapsLoading = false;
+let googleMapsCallbacks = [];
+
 const AddressAutocomplete = ({ 
   value, 
   onChange, 
@@ -8,44 +13,65 @@ const AddressAutocomplete = ({
   onAddressSelect 
 }) => {
   const [inputValue, setInputValue] = useState(value || '');
-  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(googleMapsLoaded);
   const containerRef = useRef(null);
-  const autocompleteElementRef = useRef(null);
+  const autocompleteRef = useRef(null);
 
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
 
   useEffect(() => {
-    // Check if Google Maps is already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
-      setIsGoogleLoaded(true);
-      initializeAutocomplete();
-    } else {
+    const loadGoogleMaps = () => {
+      if (googleMapsLoaded) {
+        setIsGoogleLoaded(true);
+        initializeAutocomplete();
+        return;
+      }
+
+      if (googleMapsLoading) {
+        // Add this component to the callback queue
+        googleMapsCallbacks.push(() => {
+          setIsGoogleLoaded(true);
+          initializeAutocomplete();
+        });
+        return;
+      }
+
+      googleMapsLoading = true;
+
       // Load Google Maps JavaScript API with Places library
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async&callback=initGoogleMaps`;
       script.async = true;
       script.defer = true;
       
       // Set up global callback
       window.initGoogleMaps = () => {
+        googleMapsLoaded = true;
+        googleMapsLoading = false;
+        
+        // Execute all queued callbacks
+        googleMapsCallbacks.forEach(callback => callback());
+        googleMapsCallbacks = [];
+        
+        // Execute this component's callback
         setIsGoogleLoaded(true);
         initializeAutocomplete();
       };
 
       document.head.appendChild(script);
+    };
 
-      return () => {
-        // Cleanup: remove script and callback
-        if (document.head.contains(script)) {
-          document.head.removeChild(script);
-        }
-        if (window.initGoogleMaps) {
-          delete window.initGoogleMaps;
-        }
-      };
-    }
+    loadGoogleMaps();
+
+    return () => {
+      // Cleanup: remove this component from callback queue
+      const index = googleMapsCallbacks.findIndex(callback => callback === initializeAutocomplete);
+      if (index > -1) {
+        googleMapsCallbacks.splice(index, 1);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -60,21 +86,15 @@ const AddressAutocomplete = ({
     }
 
     try {
-      // Clear any existing autocomplete element
-      if (autocompleteElementRef.current) {
-        containerRef.current.removeChild(autocompleteElementRef.current);
-      }
-
-      // Create the new PlaceAutocompleteElement
-      autocompleteElementRef.current = new window.google.maps.places.PlaceAutocompleteElement({
-        inputElement: containerRef.current.querySelector('input'),
+      // Create the autocomplete object using the legacy API (still supported)
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(containerRef.current.querySelector('input'), {
         types: ['address'],
         componentRestrictions: {}, // You can add country restrictions here if needed
       });
 
       // Listen for place selection
-      autocompleteElementRef.current.addListener('place_changed', () => {
-        const place = autocompleteElementRef.current.getPlace();
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace();
         
         if (place && place.formatted_address) {
           const formattedAddress = place.formatted_address;
