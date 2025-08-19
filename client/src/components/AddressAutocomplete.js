@@ -7,55 +7,87 @@ const AddressAutocomplete = ({
   className = "",
   onAddressSelect 
 }) => {
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
   const inputRef = useRef(null);
-  const suggestionsRef = useRef(null);
+  const autocompleteRef = useRef(null);
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
 
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps && window.google.maps.places) {
+      setIsGoogleLoaded(true);
+      initializeAutocomplete();
+    } else {
+      // Load Google Maps JavaScript API with Places library
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+      script.async = true;
+      script.defer = true;
+      
+      // Set up global callback
+      window.initGoogleMaps = () => {
+        setIsGoogleLoaded(true);
+        initializeAutocomplete();
+      };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+      document.head.appendChild(script);
+
+      return () => {
+        // Cleanup: remove script and callback
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+        if (window.initGoogleMaps) {
+          delete window.initGoogleMaps;
+        }
+      };
+    }
   }, []);
 
-  const fetchSuggestions = async (input) => {
-    if (!input || input.length < 3) {
-      setSuggestions([]);
+  useEffect(() => {
+    if (isGoogleLoaded && inputRef.current) {
+      initializeAutocomplete();
+    }
+  }, [isGoogleLoaded]);
+
+  const initializeAutocomplete = () => {
+    if (!inputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
       return;
     }
 
     try {
-      // Use the new Places API with fetch
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&types=address`,
-        {
-          method: 'GET',
-        }
-      );
+      // Create the autocomplete object
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        componentRestrictions: {}, // You can add country restrictions here if needed
+      });
 
-      const data = await response.json();
-      
-      if (data.status === 'OK') {
-        setSuggestions(data.predictions);
-      } else {
-        console.warn('Places API error:', data.status);
-        setSuggestions([]);
-      }
+      // Listen for place selection
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace();
+        
+        if (place && place.formatted_address) {
+          const formattedAddress = place.formatted_address;
+          setInputValue(formattedAddress);
+          onChange(formattedAddress);
+          if (onAddressSelect) {
+            onAddressSelect(formattedAddress);
+          }
+        } else if (place && place.name) {
+          // Fallback to place name if formatted_address is not available
+          setInputValue(place.name);
+          onChange(place.name);
+          if (onAddressSelect) {
+            onAddressSelect(place.name);
+          }
+        }
+      });
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      setSuggestions([]);
+      console.error('Error initializing Google Places Autocomplete:', error);
     }
   };
 
@@ -63,55 +95,6 @@ const AddressAutocomplete = ({
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
-    
-    if (newValue.length >= 3) {
-      fetchSuggestions(newValue);
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSuggestionClick = async (suggestion) => {
-    try {
-      // Get place details for the selected suggestion
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&fields=formatted_address`,
-        {
-          method: 'GET',
-        }
-      );
-
-      const data = await response.json();
-      
-      if (data.status === 'OK') {
-        const formattedAddress = data.result.formatted_address;
-        setInputValue(formattedAddress);
-        onChange(formattedAddress);
-        if (onAddressSelect) {
-          onAddressSelect(formattedAddress);
-        }
-      } else {
-        // Fallback to description if details fail
-        setInputValue(suggestion.description);
-        onChange(suggestion.description);
-        if (onAddressSelect) {
-          onAddressSelect(suggestion.description);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching place details:', error);
-      // Fallback to description
-      setInputValue(suggestion.description);
-      onChange(suggestion.description);
-      if (onAddressSelect) {
-        onAddressSelect(suggestion.description);
-      }
-    }
-    
-    setShowSuggestions(false);
-    setSuggestions([]);
   };
 
   return (
@@ -125,21 +108,9 @@ const AddressAutocomplete = ({
         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${className}`}
         autoComplete="off"
       />
-      
-      {showSuggestions && suggestions.length > 0 && (
-        <div
-          ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-        >
-          {suggestions.map((suggestion, index) => (
-            <div
-              key={suggestion.place_id || index}
-              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-              onClick={() => handleSuggestionClick(suggestion)}
-            >
-              {suggestion.description}
-            </div>
-          ))}
+      {!isGoogleLoaded && (
+        <div className="absolute right-2 top-2 text-gray-400 text-sm">
+          Loading...
         </div>
       )}
     </div>
