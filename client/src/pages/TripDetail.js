@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { tripsAPI, analyticsAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Clock, MapPin, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, TrendingUp, Edit, Calendar, Settings, RefreshCw } from 'lucide-react';
+import TripForm from '../components/TripForm';
 
 const TripDetail = () => {
   const { id } = useParams();
@@ -12,6 +13,8 @@ const TripDetail = () => {
   const [travelTimes, setTravelTimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDays, setSelectedDays] = useState(30);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [checkingNow, setCheckingNow] = useState(false);
 
   useEffect(() => {
     fetchTripData();
@@ -39,12 +42,27 @@ const TripDetail = () => {
 
   const handleCheckNow = async () => {
     try {
+      setCheckingNow(true);
       await tripsAPI.checkNow(id);
       toast.success('Travel time checked successfully');
       fetchTripData();
     } catch (error) {
       console.error('Error checking travel time:', error);
-      toast.error('Failed to check travel time');
+      toast.error('Failed to check travel time. Please try again.');
+    } finally {
+      setCheckingNow(false);
+    }
+  };
+
+  const handleUpdateTrip = async (tripData) => {
+    try {
+      await tripsAPI.update(id, tripData);
+      toast.success('Trip updated successfully');
+      setShowEditForm(false);
+      fetchTripData();
+    } catch (error) {
+      console.error('Error updating trip:', error);
+      toast.error('Failed to update trip');
     }
   };
 
@@ -61,6 +79,15 @@ const TripDetail = () => {
     return new Date(dateString).toLocaleTimeString();
   };
 
+  const formatCronSchedule = (cron) => {
+    // Enhanced cron format display
+    if (cron === '0 8 * * 1-5') return 'Weekday mornings (8 AM)';
+    if (cron === '0 17 * * 1-5') return 'Weekday evenings (5 PM)';
+    if (cron === '0 */2 * * *') return 'Every 2 hours';
+    if (cron === '0 */4 * * *') return 'Every 4 hours';
+    return cron;
+  };
+
   const getTrafficLevelColor = (level) => {
     switch (level) {
       case 'low': return '#10B981';
@@ -70,6 +97,8 @@ const TripDetail = () => {
       default: return '#6B7280';
     }
   };
+
+  const COLORS = ['#10B981', '#F59E0B', '#F97316', '#EF4444'];
 
   if (loading) {
     return (
@@ -119,24 +148,52 @@ const TripDetail = () => {
             <option value={90}>Last 90 days</option>
           </select>
           <button
-            onClick={handleCheckNow}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center space-x-2"
+            onClick={() => setShowEditForm(true)}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center space-x-2"
           >
-            <Clock className="h-4 w-4" />
-            <span>Check Now</span>
+            <Edit className="h-4 w-4" />
+            <span>Edit</span>
+          </button>
+          <button
+            onClick={handleCheckNow}
+            disabled={checkingNow}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center space-x-2 disabled:opacity-50"
+          >
+            {checkingNow ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Clock className="h-4 w-4" />
+            )}
+            <span>{checkingNow ? 'Checking...' : 'Check Now'}</span>
           </button>
         </div>
       </div>
 
+      {/* Trip Form Modal */}
+      {showEditForm && (
+        <TripForm
+          trip={trip}
+          onSubmit={handleUpdateTrip}
+          onCancel={() => setShowEditForm(false)}
+        />
+      )}
+
       {/* Trip Info */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
-            <h3 className="text-sm font-medium text-gray-600">Schedule</h3>
-            <p className="text-lg font-semibold text-gray-900">{trip.schedule_cron}</p>
+            <h3 className="text-sm font-medium text-gray-600 flex items-center">
+              <Calendar className="h-4 w-4 mr-1" />
+              Schedule
+            </h3>
+            <p className="text-lg font-semibold text-gray-900">{formatCronSchedule(trip.schedule_cron)}</p>
+            <p className="text-xs text-gray-500 mt-1">Raw: {trip.schedule_cron}</p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-600">Status</h3>
+            <h3 className="text-sm font-medium text-gray-600 flex items-center">
+              <Settings className="h-4 w-4 mr-1" />
+              Status
+            </h3>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               trip.is_active 
                 ? 'bg-green-100 text-green-800' 
@@ -148,6 +205,12 @@ const TripDetail = () => {
           <div>
             <h3 className="text-sm font-medium text-gray-600">Created</h3>
             <p className="text-lg font-semibold text-gray-900">{formatDate(trip.created_at)}</p>
+            <p className="text-xs text-gray-500">{formatTime(trip.created_at)}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600">Last Updated</h3>
+            <p className="text-lg font-semibold text-gray-900">{formatDate(trip.updated_at)}</p>
+            <p className="text-xs text-gray-500">{formatTime(trip.updated_at)}</p>
           </div>
         </div>
       </div>
@@ -255,21 +318,51 @@ const TripDetail = () => {
 
       {/* Traffic Distribution */}
       {analytics && analytics.traffic_distribution.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Level Distribution</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {analytics.traffic_distribution.map((item) => (
-              <div key={item.traffic_level} className="text-center">
-                <div 
-                  className="w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: getTrafficLevelColor(item.traffic_level) }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Level Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={analytics.traffic_distribution.map(item => ({
+                    name: item.traffic_level.charAt(0).toUpperCase() + item.traffic_level.slice(1),
+                    value: item.count
+                  }))}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
                 >
-                  {item.count}
+                  {COLORS.map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Level Breakdown</h3>
+            <div className="space-y-4">
+              {analytics.traffic_distribution.map((item) => (
+                <div key={item.traffic_level} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: getTrafficLevelColor(item.traffic_level) }}
+                    ></div>
+                    <span className="text-sm font-medium capitalize">{item.traffic_level}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold">{item.count}</div>
+                    <div className="text-xs text-gray-500">{formatDuration(item.avg_duration_seconds)} avg</div>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-gray-900 capitalize">{item.traffic_level}</p>
-                <p className="text-xs text-gray-500">{formatDuration(item.avg_duration_seconds)} avg</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -277,8 +370,9 @@ const TripDetail = () => {
       {/* Recent Travel Times */}
       {travelTimes.length > 0 && (
         <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">Recent Travel Times</h3>
+            <span className="text-sm text-gray-500">Showing last {Math.min(travelTimes.length, 10)} records</span>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -288,34 +382,41 @@ const TripDetail = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Distance</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Traffic Level</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Speed</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {travelTimes.slice(0, 10).map((time) => (
-                  <tr key={time.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>{formatDate(time.recorded_at)}</div>
-                      <div className="text-gray-500">{formatTime(time.recorded_at)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDuration(time.duration_seconds)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {Math.round(time.distance_meters / 1000 * 10) / 10} km
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span 
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium`}
-                        style={{ 
-                          backgroundColor: getTrafficLevelColor(time.traffic_level) + '20',
-                          color: getTrafficLevelColor(time.traffic_level)
-                        }}
-                      >
-                        {time.traffic_level}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {travelTimes.slice(0, 10).map((time) => {
+                  const speedKmh = Math.round((time.distance_meters / 1000) / (time.duration_seconds / 3600));
+                  return (
+                    <tr key={time.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{formatDate(time.recorded_at)}</div>
+                        <div className="text-gray-500">{formatTime(time.recorded_at)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDuration(time.duration_seconds)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {Math.round(time.distance_meters / 1000 * 10) / 10} km
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span 
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium`}
+                          style={{ 
+                            backgroundColor: getTrafficLevelColor(time.traffic_level) + '20',
+                            color: getTrafficLevelColor(time.traffic_level)
+                          }}
+                        >
+                          {time.traffic_level}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {speedKmh} km/h
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -331,9 +432,10 @@ const TripDetail = () => {
           <p className="text-gray-500 mb-4">This trip hasn't collected any travel time data yet.</p>
           <button
             onClick={handleCheckNow}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+            disabled={checkingNow}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
-            Check Travel Time Now
+            {checkingNow ? 'Checking...' : 'Check Travel Time Now'}
           </button>
         </div>
       )}
