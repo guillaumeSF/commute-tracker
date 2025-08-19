@@ -17,7 +17,15 @@ const validateTrip = [
 // Get all trips
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM trips ORDER BY created_at DESC');
+    const result = await pool.query(`
+      SELECT 
+        t.*,
+        MAX(tt.recorded_at) as last_check_at
+      FROM trips t
+      LEFT JOIN travel_times tt ON t.id = tt.trip_id
+      GROUP BY t.id, t.name, t.origin_address, t.destination_address, t.schedule_cron, t.is_active, t.created_at, t.updated_at
+      ORDER BY t.created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching trips:', error);

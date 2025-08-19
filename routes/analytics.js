@@ -14,6 +14,7 @@ router.get('/overview', async (req, res) => {
         t.name,
         t.origin_address,
         t.destination_address,
+        t.is_active,
         COUNT(tt.id) as total_checks,
         AVG(tt.duration_seconds) as avg_duration_seconds,
         MIN(tt.duration_seconds) as min_duration_seconds,
@@ -26,7 +27,7 @@ router.get('/overview', async (req, res) => {
       FROM trips t
       LEFT JOIN travel_times tt ON t.id = tt.trip_id 
         AND tt.recorded_at >= NOW() - INTERVAL '${days} days'
-      GROUP BY t.id, t.name, t.origin_address, t.destination_address
+      GROUP BY t.id, t.name, t.origin_address, t.destination_address, t.is_active
       ORDER BY t.created_at DESC
     `);
 

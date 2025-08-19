@@ -75,7 +75,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Trips</p>
               <p className="text-2xl font-bold text-gray-900">
-                {overview.filter(trip => trip.total_checks > 0).length}
+                {overview.filter(trip => trip.is_active).length}
               </p>
             </div>
           </div>
@@ -89,7 +89,10 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Checks</p>
               <p className="text-2xl font-bold text-gray-900">
-                {overview.reduce((sum, trip) => sum + (trip.total_checks || 0), 0)}
+                {overview
+                  .filter(trip => trip.is_active)
+                  .reduce((sum, trip) => sum + (trip.total_checks || 0), 0)
+                }
               </p>
             </div>
           </div>
@@ -103,10 +106,14 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg Duration</p>
               <p className="text-2xl font-bold text-gray-900">
-                {overview.length > 0 
-                  ? formatDuration(overview.reduce((sum, trip) => sum + (trip.avg_duration_seconds || 0), 0) / overview.length)
-                  : '0 min'
-                }
+                {(() => {
+                  const activeTripsWithData = overview.filter(trip => trip.is_active && trip.avg_duration_seconds);
+                  if (activeTripsWithData.length === 0) return '0 min';
+                  
+                  const totalDuration = activeTripsWithData.reduce((sum, trip) => sum + (trip.avg_duration_seconds || 0), 0);
+                  const avgDuration = totalDuration / activeTripsWithData.length;
+                  return formatDuration(avgDuration);
+                })()}
               </p>
             </div>
           </div>

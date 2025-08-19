@@ -5,7 +5,7 @@ import { tripsAPI, analyticsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Clock, MapPin, TrendingUp, Edit, Calendar, Settings, RefreshCw } from 'lucide-react';
 import TripForm from '../components/TripForm';
-import { formatCronSchedule, formatDuration, formatDate, formatTime, getTrafficLevelColor } from '../utils/formatters';
+import { formatCronSchedule, formatDuration, formatDate, formatTime, getTrafficLevelColor, getNextScheduledCheck, formatNextCheck } from '../utils/formatters';
 
 const TripDetail = () => {
   const { id } = useParams();
@@ -151,7 +151,7 @@ const TripDetail = () => {
 
       {/* Trip Info */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div>
             <h3 className="text-sm font-medium text-gray-600 flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
@@ -172,6 +172,27 @@ const TripDetail = () => {
             }`}>
               {trip.is_active ? 'Active' : 'Paused'}
             </span>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 flex items-center">
+              <Clock className="h-4 w-4 mr-1" />
+              Next Check
+            </h3>
+            {trip.is_active ? (
+              <>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatNextCheck(getNextScheduledCheck(trip.schedule_cron))}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {getNextScheduledCheck(trip.schedule_cron) ? 
+                    formatDate(getNextScheduledCheck(trip.schedule_cron)) + ' ' + formatTime(getNextScheduledCheck(trip.schedule_cron)) : 
+                    'Not scheduled'
+                  }
+                </p>
+              </>
+            ) : (
+              <p className="text-lg font-semibold text-gray-400">Paused</p>
+            )}
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-600">Created</h3>

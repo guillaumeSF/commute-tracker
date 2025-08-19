@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Play, Pause, Clock, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, Pause, Clock, MapPin, Eye } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import TripForm from '../components/TripForm';
-import { formatCronSchedule } from '../utils/formatters';
+import { formatCronSchedule, formatDate, formatTime } from '../utils/formatters';
 
 const Trips = () => {
   const [trips, setTrips] = useState([]);
@@ -192,10 +192,24 @@ const Trips = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {trip.updated_at ? new Date(trip.updated_at).toLocaleDateString() : 'Never'}
+                      {trip.last_check_at ? (
+                        <div>
+                          <div>{formatDate(trip.last_check_at)}</div>
+                          <div className="text-xs text-gray-400">{formatTime(trip.last_check_at)}</div>
+                        </div>
+                      ) : (
+                        'Never'
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
+                        <Link
+                          to={`/trips/${trip.id}`}
+                          className="text-green-600 hover:text-green-900"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
                         <button
                           onClick={() => handleCheckNow(trip.id)}
                           className="text-blue-600 hover:text-blue-900"
