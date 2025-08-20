@@ -52,3 +52,4 @@ const getTrafficLevel = (durationInTraffic, duration) => {
 module.exports = {
   fetchTravelTime
 };
+
