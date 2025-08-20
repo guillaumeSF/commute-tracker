@@ -93,7 +93,7 @@ const TripDetail = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
         <div className="flex items-center space-x-4">
           <Link
             to="/trips"
@@ -101,42 +101,46 @@ const TripDetail = () => {
           >
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{trip.name}</h1>
-            <p className="text-gray-600 mt-1">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 truncate">{trip.name}</h1>
+            <p className="text-sm lg:text-base text-gray-600 mt-1 truncate">
               {trip.origin_address} → {trip.destination_address}
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+        
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
           <select
             value={selectedDays}
             onChange={(e) => setSelectedDays(parseInt(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
           >
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
           </select>
-          <button
-            onClick={() => setShowEditForm(true)}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center space-x-2"
-          >
-            <Edit className="h-4 w-4" />
-            <span>Edit</span>
-          </button>
-          <button
-            onClick={handleCheckNow}
-            disabled={checkingNow}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center space-x-2 disabled:opacity-50"
-          >
-            {checkingNow ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Clock className="h-4 w-4" />
-            )}
-            <span>{checkingNow ? 'Checking...' : 'Check Now'}</span>
-          </button>
+          
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowEditForm(true)}
+              className="flex-1 sm:flex-none bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 flex items-center justify-center space-x-2 text-sm"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit</span>
+            </button>
+            <button
+              onClick={handleCheckNow}
+              disabled={checkingNow}
+              className="flex-1 sm:flex-none bg-primary-600 text-white px-3 py-2 rounded-lg hover:bg-primary-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
+            >
+              {checkingNow ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Clock className="h-4 w-4" />
+              )}
+              <span>{checkingNow ? 'Checking...' : 'Check Now'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -150,8 +154,8 @@ const TripDetail = () => {
       )}
 
       {/* Trip Info */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+      <div className="bg-white p-4 lg:p-6 rounded-lg shadow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
           <div>
             <h3 className="text-sm font-medium text-gray-600 flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
@@ -227,7 +231,7 @@ const TripDetail = () => {
 
       {/* Summary Stats */}
       {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">

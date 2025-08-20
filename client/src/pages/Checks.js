@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Calendar, Clock, MapPin, TrendingUp } from 'lucide-react';
+import { Trash2, Calendar, Clock, MapPin, TrendingUp, Download } from 'lucide-react';
 import { formatDate, formatTime, formatDuration, getTrafficLevelColor } from '../utils/formatters';
 
 const Checks = () => {
@@ -93,6 +93,57 @@ const Checks = () => {
   const getSortIcon = (field) => {
     if (sortBy !== field) return null;
     return sortOrder === 'asc' ? '↑' : '↓';
+  };
+
+  const exportToCSV = () => {
+    if (checks.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Create CSV headers
+    const headers = [
+      'Date',
+      'Time',
+      'Trip Name',
+      'Origin Address',
+      'Destination Address',
+      'Duration (minutes)',
+      'Distance (km)',
+      'Traffic Level',
+      'Speed (km/h)'
+    ];
+
+    // Create CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...checks.map(check => {
+        const speedKmh = Math.round((check.distance_meters / 1000) / (check.duration_seconds / 3600));
+        return [
+          formatDate(check.recorded_at),
+          formatTime(check.recorded_at),
+          `"${check.trip_name}"`,
+          `"${check.origin_address}"`,
+          `"${check.destination_address}"`,
+          Math.round(check.duration_seconds / 60),
+          Math.round(check.distance_meters / 1000 * 10) / 10,
+          check.traffic_level,
+          speedKmh
+        ].join(',');
+      })
+    ];
+
+    // Create and download CSV file
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `travel-time-checks-${formatDate(new Date()).replace(/\//g, '-')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -192,10 +243,18 @@ const Checks = () => {
         {/* Checks Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
               <h2 className="text-lg font-semibold text-gray-900">
                 All Checks ({checks.length})
               </h2>
+              <button
+                onClick={exportToCSV}
+                disabled={checks.length === 0}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export CSV</span>
+              </button>
             </div>
           </div>
 
@@ -206,20 +265,22 @@ const Checks = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('recorded_at')}
                     >
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        Date/Time {getSortIcon('recorded_at')}
+                        <span className="hidden sm:inline">Date/Time</span>
+                        <span className="sm:hidden">Date</span>
+                        {getSortIcon('recorded_at')}
                       </div>
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('trip_name')}
                     >
                       <div className="flex items-center">
@@ -228,7 +289,7 @@ const Checks = () => {
                       </div>
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('duration_seconds')}
                     >
                       <div className="flex items-center">
@@ -237,15 +298,17 @@ const Checks = () => {
                       </div>
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('traffic_level')}
                     >
                       <div className="flex items-center">
                         <TrendingUp className="h-4 w-4 mr-1" />
-                        Traffic Level {getSortIcon('traffic_level')}
+                        <span className="hidden sm:inline">Traffic Level</span>
+                        <span className="sm:hidden">Traffic</span>
+                        {getSortIcon('traffic_level')}
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -253,7 +316,7 @@ const Checks = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {checks.map((check) => (
                     <tr key={check.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {formatDate(check.recorded_at)}
@@ -263,15 +326,16 @@ const Checks = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {check.trip_name}
+                          <span className="hidden sm:inline">{check.trip_name}</span>
+                          <span className="sm:hidden">{check.trip_name.length > 20 ? check.trip_name.substring(0, 20) + '...' : check.trip_name}</span>
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 hidden sm:block">
                           {check.origin_address} → {check.destination_address}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {formatDuration(check.duration_seconds)}
                         </div>
@@ -279,7 +343,7 @@ const Checks = () => {
                           {Math.round(check.distance_meters / 1000 * 10) / 10} km
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <span
                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
                           style={{
@@ -290,7 +354,7 @@ const Checks = () => {
                           {check.traffic_level}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleDelete(check.id)}
                           className="text-red-600 hover:text-red-900"
