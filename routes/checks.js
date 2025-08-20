@@ -5,7 +5,7 @@ const router = express.Router();
 // GET /api/checks - Get all checks with optional filtering and sorting
 router.get('/', async (req, res) => {
   try {
-    const { trip_id, traffic_level, sort_by = 'recorded_at', sort_order = 'desc' } = req.query;
+    const { trip_id, traffic_level, start_date, end_date, sort_by = 'recorded_at', sort_order = 'desc' } = req.query;
     
     let query = `
       SELECT 
@@ -35,6 +35,19 @@ router.get('/', async (req, res) => {
     if (traffic_level) {
       query += ` AND tt.traffic_level = $${paramIndex}`;
       params.push(traffic_level);
+      paramIndex++;
+    }
+    
+    // Add date range filters
+    if (start_date) {
+      query += ` AND DATE(tt.recorded_at) >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+    
+    if (end_date) {
+      query += ` AND DATE(tt.recorded_at) <= $${paramIndex}`;
+      params.push(end_date);
       paramIndex++;
     }
     

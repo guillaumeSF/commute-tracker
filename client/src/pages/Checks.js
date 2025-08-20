@@ -8,6 +8,8 @@ const Checks = () => {
   const [error, setError] = useState(null);
   const [filterTrip, setFilterTrip] = useState('');
   const [filterTraffic, setFilterTraffic] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sortBy, setSortBy] = useState('recorded_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [trips, setTrips] = useState([]);
@@ -15,7 +17,7 @@ const Checks = () => {
   useEffect(() => {
     fetchChecks();
     fetchTrips();
-  }, [filterTrip, filterTraffic, sortBy, sortOrder]);
+  }, [filterTrip, filterTraffic, startDate, endDate, sortBy, sortOrder]);
 
   const fetchTrips = async () => {
     try {
@@ -37,6 +39,8 @@ const Checks = () => {
       
       if (filterTrip) params.append('trip_id', filterTrip);
       if (filterTraffic) params.append('traffic_level', filterTraffic);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
       if (sortBy) params.append('sort_by', sortBy);
       if (sortOrder) params.append('sort_order', sortOrder);
       
@@ -190,7 +194,7 @@ const Checks = () => {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Filter by Trip
@@ -226,11 +230,37 @@ const Checks = () => {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
             <div className="flex items-end">
               <button
                 onClick={() => {
                   setFilterTrip('');
                   setFilterTraffic('');
+                  setStartDate('');
+                  setEndDate('');
                 }}
                 className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
               >
